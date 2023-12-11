@@ -1,7 +1,4 @@
-use std::{
-    sync::{Arc, Mutex},
-    thread,
-};
+use std::thread;
 
 #[derive(Debug, Clone)]
 struct XtoYMaps(Vec<Map>);
@@ -75,11 +72,10 @@ fn day5a(input: &str) -> i64 {
 fn day5b(input: &str) -> i64 {
     let (seeds, x_to_y_maps) = parse_input(input);
 
-    let x_to_y_maps = Arc::new(Mutex::new(x_to_y_maps));
     let mut handles = Vec::new();
 
     for chunk in seeds.chunks(2) {
-        let x_to_y_maps = Arc::clone(&x_to_y_maps);
+        let x_to_y_maps = x_to_y_maps.clone();
         let number = chunk[0];
         let range = chunk[1];
         handles.push(thread::spawn(move || {
@@ -88,7 +84,6 @@ fn day5b(input: &str) -> i64 {
             for seed in number..number + range {
                 let mut local_number = seed;
 
-                let x_to_y_maps = x_to_y_maps.lock().unwrap();
                 for maps in x_to_y_maps.iter() {
                     for map in &maps.0 {
                         if local_number >= map.src_start
