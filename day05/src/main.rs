@@ -1,4 +1,7 @@
-use rayon::prelude::*;
+use std::{
+    sync::{Arc, Mutex},
+    thread,
+};
 
 #[derive(Debug, Clone)]
 struct XtoYMaps(Vec<Map>);
@@ -72,16 +75,20 @@ fn day5a(input: &str) -> i64 {
 fn day5b(input: &str) -> i64 {
     let (seeds, x_to_y_maps) = parse_input(input);
 
-    let result = seeds
-        .par_chunks(2)
-        .map(|chunk| {
-            let number = chunk[0];
-            let range = chunk[1];
+    let x_to_y_maps = Arc::new(Mutex::new(x_to_y_maps));
+    let mut handles = Vec::new();
+
+    for chunk in seeds.chunks(2) {
+        let x_to_y_maps = Arc::clone(&x_to_y_maps);
+        let number = chunk[0];
+        let range = chunk[1];
+        handles.push(thread::spawn(move || {
             let mut local_result = i64::MAX;
 
             for seed in number..number + range {
                 let mut local_number = seed;
 
+                let x_to_y_maps = x_to_y_maps.lock().unwrap();
                 for maps in x_to_y_maps.iter() {
                     for map in &maps.0 {
                         if local_number >= map.src_start
@@ -99,10 +106,13 @@ fn day5b(input: &str) -> i64 {
             }
 
             local_result
-        })
-        .reduce(|| i64::MAX, |a, b| if a < b { a } else { b });
-
-    result
+        }));
+    }
+    let results: Vec<i64> = handles
+        .into_iter()
+        .map(|handle| handle.join().unwrap())
+        .collect();
+    return results.iter().min().unwrap().clone();
 }
 
 fn main() {
