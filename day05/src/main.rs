@@ -108,11 +108,11 @@ fn day5b(input: &str) -> i64 {
             local_result
         }));
     }
-    let results: Vec<i64> = handles
+    return handles
         .into_iter()
         .map(|handle| handle.join().unwrap())
-        .collect();
-    return results.iter().min().unwrap().clone();
+        .min()
+        .unwrap()
 }
 
 fn main() {
