@@ -1,3 +1,4 @@
+use num::integer::lcm;
 use std::collections::HashMap;
 
 fn parse_input(input: &str) -> (&str, HashMap<&str, Vec<&str>>) {
@@ -15,12 +16,16 @@ fn parse_input(input: &str) -> (&str, HashMap<&str, Vec<&str>>) {
     (instructions, network)
 }
 
-fn day8a(input: &str) -> i32 {
-    let (instructions, network) = parse_input(input);
-    let mut current_node = "AAA";
+fn num_steps(
+    instructions: &str,
+    network: &HashMap<&str, Vec<&str>>,
+    start: &str,
+    end: Vec<&str>,
+) -> i64 {
+    let mut current_node = start;
     let mut instruction_index = 0;
     let mut result = 0;
-    while current_node != "ZZZ" {
+    while !end.contains(&current_node) {
         match instructions.chars().nth(instruction_index) {
             Some('L') => current_node = network.get(current_node).unwrap()[0],
             Some('R') => current_node = network.get(current_node).unwrap()[1],
@@ -36,56 +41,34 @@ fn day8a(input: &str) -> i32 {
     result
 }
 
-fn day8b(input: &str) -> i32 {
-    enum Direction {
-        Left,
-        Right,
-    }
-
-    fn update_current_nodes<'a>(
-        current_nodes: &mut Vec<&'a str>,
-        network: &HashMap<&str, Vec<&'a str>>,
-        direction: Direction,
-    ) {
-        let mut next_current_nodes: Vec<&'a str> = Vec::new();
-        for node in current_nodes.iter() {
-            match direction {
-                Direction::Left => next_current_nodes.push(network.get(node).unwrap()[0]),
-                Direction::Right => next_current_nodes.push(network.get(node).unwrap()[1]),
-            }
-        }
-        *current_nodes = next_current_nodes;
-    }
-
+fn day8a(input: &str) -> i32 {
     let (instructions, network) = parse_input(input);
-    let mut current_nodes = network
+    num_steps(instructions, &network, "AAA", vec!["ZZZ"].to_vec()) as i32
+}
+
+fn day8b(input: &str) -> i64 {
+    let (instructions, network) = parse_input(input);
+    let start_nodes = network
         .keys()
         .filter(|&k| k.ends_with('A'))
         .map(|&k| k)
         .collect::<Vec<&str>>();
-    let mut result = 0;
-    let mut instruction_index = 0;
-    println!("{:?} \n", current_nodes);
 
-    loop {
-        match instructions.chars().nth(instruction_index) {
-            Some('L') => update_current_nodes(&mut current_nodes, &network, Direction::Left),
-            Some('R') => update_current_nodes(&mut current_nodes, &network, Direction::Right),
-            _ => panic!("unknown direction!"),
-        }
-        result += 1;
-        if current_nodes.iter().all(|&n| n.ends_with('Z')) {
-            break result;
-        }
-        if instruction_index == instructions.len() - 1 {
-            instruction_index = 0;
-        } else {
-            instruction_index += 1;
-        }
-        if result % 1e6 as i32 == 0 {
-            println!("{:?}", result);
-        }
+    let end_nodes = network
+        .keys()
+        .filter(|&k| k.ends_with('Z'))
+        .map(|&k| k)
+        .collect::<Vec<&str>>();
+
+    let mut factors = Vec::new();
+    for node in start_nodes.iter() {
+        factors.push(num_steps(instructions, &network, node, end_nodes.clone()));
     }
+    let mut result = 1 as i64;
+    for factor in factors.iter() {
+        result = lcm(result, *factor);
+    }
+    result
 }
 
 fn main() {
