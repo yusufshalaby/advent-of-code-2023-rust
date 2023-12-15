@@ -118,15 +118,63 @@ fn parse_input(input: &str) -> Vec<Vec<Option<Pipe>>> {
         .collect()
 }
 
-fn find_start(map: &Vec<Vec<Option<Pipe>>>) -> (usize, usize) {
+fn find_start(map: &mut Vec<Vec<Option<Pipe>>>) -> (Option<(usize, usize)>, Option<Direction>) {
+    let mut startindex = None;
+    let mut startdirection = None;
     for (x, row) in map.iter().enumerate() {
         for (y, pipe) in row.iter().enumerate() {
             if let Some(Pipe::Start(_)) = pipe {
-                return (x, y);
+                startindex = Some((x, y));
             }
         }
     }
-    panic!("No start found");
+    if let Some(startindex) = startindex {
+        let mut valid_directions = vec![];
+        for direction in vec![
+            Direction::North,
+            Direction::South,
+            Direction::East,
+            Direction::West,
+        ] {
+            if let Some(next_index) = find_next_index(map, &direction, startindex) {
+                if let Some(pipe) = map.get(next_index.0).unwrap().get(next_index.1).unwrap() {
+                    if let Some(_) = pipe.find_next_direction(&direction) {
+                                valid_directions.push(direction);
+                    }
+                }
+            }
+        }
+        let direction1 = &valid_directions[0];
+        let direction2 = &valid_directions[1];
+        match (direction1, direction2) {
+            (Direction::North, Direction::East) => {
+                map[startindex.0][startindex.1] = Some(Pipe::NorthEast(true));
+                startdirection = Some(Direction::North);
+            }
+            (Direction::North, Direction::West) => {
+                map[startindex.0][startindex.1] = Some(Pipe::NorthWest(true));
+                startdirection = Some(Direction::North);
+            }
+            (Direction::South, Direction::East) => {
+                map[startindex.0][startindex.1] = Some(Pipe::SouthEast(true));
+                startdirection = Some(Direction::South);
+            }
+            (Direction::South, Direction::West) => {
+                map[startindex.0][startindex.1] = Some(Pipe::SouthWest(true));
+                startdirection = Some(Direction::South);
+            }
+            (Direction::North, Direction::South) => {
+                map[startindex.0][startindex.1] = Some(Pipe::NorthSouth(true));
+                startdirection = Some(Direction::North);
+            }
+            (Direction::East, Direction::West) => {
+                map[startindex.0][startindex.1] = Some(Pipe::EastWest(true));
+                startdirection = Some(Direction::East);
+            }
+            _ => panic!("Invalid start"),
+        }
+    }
+    (startindex, startdirection)
 }
 
 fn travel_pipe(
@@ -175,23 +223,16 @@ fn travel_pipe(
 }
 
 fn traverse_map(map: &mut Vec<Vec<Option<Pipe>>>) -> (i32, Vec<Vec<Option<Pipe>>>) {
-    let start_index = find_start(&map);
+    let (start_index, start_direction) = find_start(map);
     println!("Start index: {:?}", start_index);
-    for initial_direction in vec![
-        Direction::North,
-        Direction::East,
-        Direction::South,
-        Direction::West,
-    ] {
-        if let Some(next_direction) = Pipe::Start(true).find_next_direction(&initial_direction) {
-            let next_index = find_next_index(&map, &next_direction, start_index);
-            let mut map = map.clone();
-            if let Some(next_index) = next_index {
-                let (loop_index, loop_distance) =
-                    travel_pipe(&mut map, &next_direction, next_index, 1);
-                if loop_index == start_index {
-                    return (loop_distance / 2, map);
-                }
+
+    if let Some(next_direction) = Pipe::Start(true).find_next_direction(&start_direction.unwrap()) {
+        let next_index = find_next_index(&map, &next_direction, start_index.unwrap());
+        let mut map = map.clone();
+        if let Some(next_index) = next_index {
+            let (loop_index, loop_distance) = travel_pipe(&mut map, &next_direction, next_index, 1);
+            if loop_index == start_index.unwrap() {
+                return (loop_distance / 2, map);
             }
         }
     }
@@ -210,16 +251,35 @@ fn day10b(input: &str) -> i32 {
     let mut result = 0;
     for row in map.iter() {
         let mut curr_row_counter = 0;
+        let mut connected_pipe: Option<Pipe> = None;
         for pipe in row.iter() {
             if let Some(pipe) = pipe {
                 match pipe {
-                    Pipe::NorthSouth(true) => curr_row_counter += 1,
-                    Pipe::SouthEast(true) => curr_row_counter += 1,
-                    Pipe::SouthWest(true) => curr_row_counter += 1,
-                    Pipe::Start(true) => curr_row_counter += 1,
+                    Pipe::NorthSouth(true) => {
+                        curr_row_counter += 1;
+                        connected_pipe = None;
+                    }
+                    Pipe::SouthEast(true) => {
+                        curr_row_counter += 1;
+                        connected_pipe = Some(Pipe::SouthEast(true));
+                    }
+                    Pipe::SouthWest(true) => match connected_pipe {
+                        Some(Pipe::NorthEast(true)) => (),
+                        _ => curr_row_counter += 1,
+                    },
+                    Pipe::Start(true) => {
+                        curr_row_counter += 1;
+                        connected_pipe = None;
+                    }
                     Pipe::EastWest(true) => (),
-                    Pipe::NorthEast(true) => (),
-                    Pipe::NorthWest(true) => (),
+                    Pipe::NorthEast(true) => {
+                        curr_row_counter += 1;
+                        connected_pipe = Some(Pipe::NorthEast(true));
+                    }
+                    Pipe::NorthWest(true) => match connected_pipe {
+                        Some(Pipe::SouthEast(true)) => (),
+                        _ => curr_row_counter += 1,
+                    },
                     _ => {
                         if curr_row_counter % 2 == 1 {
                             result += 1;
@@ -230,6 +290,7 @@ fn day10b(input: &str) -> i32 {
                 result += 1;
             }
         }
+        // println!("Result: {}", result);
     }
     result
 }
