@@ -50,12 +50,7 @@ fn sum_of_distances(
     result
 }
 
-fn day11a(input: &str) -> i32 {
-    let (originalgalaxypositions, expandedrows, expandedcols) = expand_universe(input, 1);
-    sum_of_distances(&originalgalaxypositions, &expandedrows, &expandedcols) as i32
-}
-
-fn day11b(input: &str, expansion_size: usize) -> i64 {
+fn day11(input: &str, expansion_size: usize) -> i64 {
     let expansion_size = (expansion_size - 1).max(1);
     let (originalgalaxypositions, expandedrows, expandedcols) =
         expand_universe(input, expansion_size);
@@ -64,8 +59,8 @@ fn day11b(input: &str, expansion_size: usize) -> i64 {
 
 fn main() {
     let input = include_str!("../input.txt");
-    println!("{}", day11a(input));
-    println!("{}", day11b(input, 1_000_000));
+    println!("{}", day11(input, 1));
+    println!("{}", day11(input, 1_000_000));
 }
 
 #[cfg(test)]
@@ -88,18 +83,18 @@ mod tests {
     #[test]
     fn test_11a() {
         let input = input();
-        assert_eq!(day11a(input), 374);
+        assert_eq!(day11(input, 1), 374);
     }
 
     #[test]
     fn test_11b_10() {
         let input = input();
-        assert_eq!(day11b(input, 10), 1030);
+        assert_eq!(day11(input, 10), 1030);
     }
 
     #[test]
     fn test_11b_100() {
         let input = input();
-        assert_eq!(day11b(input, 100), 8410);
+        assert_eq!(day11(input, 100), 8410);
     }
 }
