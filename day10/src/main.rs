@@ -224,7 +224,6 @@ fn travel_pipe(
 
 fn traverse_map(map: &mut Vec<Vec<Option<Pipe>>>) -> (i32, Vec<Vec<Option<Pipe>>>) {
     let (start_index, start_direction) = find_start(map);
-    println!("Start index: {:?}", start_index);
 
     if let Some(next_direction) = Pipe::Start(true).find_next_direction(&start_direction.unwrap()) {
         let next_index = find_next_index(&map, &next_direction, start_index.unwrap());
