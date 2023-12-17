@@ -49,8 +49,6 @@ impl Puzzle {
         if let Some(&v) = cache.get(&(si, ri)) {
             return v;
         }
-
-
         // out of groups and pattern is exhausted or only remaining are . or ?
         if ri == self.groupsizes.len()
             && (si >= self.pattern.len()
