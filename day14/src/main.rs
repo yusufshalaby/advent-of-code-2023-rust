@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 //implement Copy trait
 #[derive(Copy, Clone, Debug)]
 #[allow(dead_code)]
@@ -158,6 +160,22 @@ impl Platform {
                 + acc
         })
     }
+
+    fn get_str(&self) -> String {
+        self.rocks
+            .iter()
+            .map(|row| {
+                row.iter()
+                    .map(|rock| match rock {
+                        Some(Rock::Round) => 'O',
+                        Some(Rock::Cube) => '#',
+                        None => '.',
+                    })
+                    .collect::<String>()
+            })
+            .collect::<Vec<_>>()
+            .join("\n")
+    }
 }
 
 fn day14a(input: &str) -> i32 {
@@ -169,7 +187,12 @@ fn day14a(input: &str) -> i32 {
 
 fn day14b(input: &str) -> i32 {
     let mut platform = Platform::new(input);
-    for _ in 0..1000 {
+    let mut states = HashMap::new();
+    let mut early_exit: Option<usize> = None;
+    for i in 0..1_000_000_000 {
+        if early_exit.map(|value| value == i).unwrap_or(false) {
+            break;
+        }
         for direction in [
             Direction::North,
             Direction::West,
@@ -179,6 +202,12 @@ fn day14b(input: &str) -> i32 {
             platform.change_direction(direction);
             platform.tilt();
         }
+        let platform_state = platform.get_str();
+        if let Some(first) = states.get(&platform_state) {
+            let cycle = i - first;
+            early_exit.replace(i + (1_000_000_000 - i) % cycle);
+        }
+        states.insert(platform_state, i);
     }
     platform.get_load()
 }
