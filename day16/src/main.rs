@@ -4,7 +4,7 @@ enum Dim {
     Y,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq)]
 enum Direction {
     Forward,
     Backward,
@@ -17,8 +17,14 @@ enum Mirror {
     Empty,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq)]
 struct Beam(Dim, Direction);
+
+struct State {
+    beam: Beam,
+    pos: (i32, i32),
+    beams: Vec<Vec<Vec<Beam>>>,
+}
 
 impl Beam {
     fn switch_dim(&mut self) {
@@ -35,76 +41,70 @@ impl Beam {
         }
     }
 
-    fn move_space(&self, i: i32, j: i32) -> (i32, i32) {
-        match self.0 {
-            Dim::X => match self.1 {
-                Direction::Forward => (i, j + 1),
-                Direction::Backward => (i, j - 1),
+}
+impl State {
+    
+    fn new(beam: Beam, pos: (i32, i32), beams: Vec<Vec<Vec<Beam>>>) -> Self {
+        Self { beam, pos, beams }
+    }
+
+    fn move_space(&mut self){
+        match self.beam.0 {
+            Dim::X => match self.beam.1 {
+                Direction::Forward => self.pos.1 += 1,
+                Direction::Backward => self.pos.1 -= 1,
             },
-            Dim::Y => match self.1 {
-                Direction::Forward => (i + 1, j),
-                Direction::Backward => (i - 1, j),
+            Dim::Y => match self.beam.1 {
+                Direction::Forward => self.pos.0 += 1,
+                Direction::Backward => self.pos.0 -= 1,
             },
         }
     }
 
-    fn reflect(
-        &mut self,
+    fn reflect<'a>(
+        &'a mut self,
         map: &Vec<Vec<Mirror>>,
-        start_pos: &(i32, i32),
-        beams: &mut Vec<Vec<Vec<Beam>>>,
-    ) -> Vec<Vec<usize>> {
-        let mut result = vec![vec![0; map[0].len()]; map.len()];
-        let (mut i, mut j) = start_pos;
-        while let Some(val) = check_valid_indices(map, &(i, j)) {
-            println!("i: {}, j: {}, val: {:?}, {:?}", i, j, val, self);
-            result[i as usize][j as usize] += 1;
+    ) {
+        while let Some(val) = self.check_valid_indices(map) {
+            self.beams[self.pos.0 as usize][self.pos.1 as usize].push(self.beam.clone());
             match val {
                 Mirror::Empty => (),
                 Mirror::Straight(dim) => {
-                    if self.0 != *dim {
-                        self.1 = Direction::Forward;
-                        self.0 = *dim;
-                        result = sum_vecs(result, self.reflect(map, &self.move_space(i, j)));
-                        self.1 = Direction::Backward;
-                        self.0 = *dim;
+                    if self.beam.0 != *dim {
+                        self.beam = Beam(*dim, Direction::Forward);
+                        let (i, j) = self.pos.clone();
+                        self.reflect(map);
+                        self.pos = (i, j);
+                        self.beam = Beam(*dim, Direction::Backward);
                     }
                 }
                 Mirror::Angled(direction) => {
-                    self.switch_dim();
+                    self.beam.switch_dim();
                     match direction {
-                        Direction::Forward => self.switch_direction(),
+                        Direction::Forward => self.beam.switch_direction(),
                         Direction::Backward => (),
                     }
                 }
             }
-            (i, j) = self.move_space(i, j)
+            self.move_space();
         }
-        result
     }
-}
-
-fn check_valid_indices<'a, T>(matrix: &'a Vec<Vec<T>>, indices: &'a (i32, i32)) -> Option<&'a T> {
-    if indices.0 < 0 || indices.1 < 0 {
-        return None;
-    }
-    if let Some(row) = matrix.get(indices.0 as usize) {
-        row.get(indices.1 as usize)
-    } else {
-        None
-    }
-}
-
-fn sum_vecs(vec1: Vec<Vec<usize>>, vec2: Vec<Vec<usize>>) -> Vec<Vec<usize>> {
-    let mut result = vec![];
-    for (i, vec) in vec1.iter().enumerate() {
-        let mut new_vec = vec![];
-        for (j, val) in vec.iter().enumerate() {
-            new_vec.push(val + vec2[i][j]);
+    fn check_valid_indices<'a>(
+        &self,
+        map: &'a Vec<Vec<Mirror>>,
+    ) -> Option<&'a Mirror> {
+        if self.pos.0 < 0 || self.pos.1 < 0 {
+            return None;
         }
-        result.push(new_vec);
+        map
+            .get(self.pos.0 as usize)
+            .and_then(|row| row.get(self.pos.1 as usize))
+            .filter(|_| {
+                self.beams[self.pos.0 as usize][self.pos.1 as usize]
+                    .iter()
+                    .all(|beam| *beam != self.beam)
+            })
     }
-    result
 }
 
 fn parse_input(input: &str) -> Vec<Vec<Mirror>> {
@@ -127,11 +127,12 @@ fn parse_input(input: &str) -> Vec<Vec<Mirror>> {
 
 fn day16a(input: &str) -> i32 {
     let map = parse_input(input);
-    let mut beam = Beam(Dim::X, Direction::Forward);
-    let results = beam.reflect(&map, &(0, 0));
-    println!("{:?}", results);
-    results.iter().fold(0, |acc, vec| {
-        acc + vec.iter().filter(|&&x| x > 0).count() as i32
+    let beam = Beam(Dim::X, Direction::Forward);
+    let beams = vec![vec![vec![]; map[0].len()]; map.len()];
+    let mut state = State::new(beam, (0, 0), beams);
+    state.reflect(&map);
+    state.beams.iter().fold(0, |acc, vec| {
+        acc + vec.iter().filter(|&x| x.len() > 0).count() as i32
     })
 }
 
@@ -160,6 +161,6 @@ mod tests {
     #[test]
     fn test_xa() {
         let input = input();
-        assert_eq!(day16a(input), 1);
+        assert_eq!(day16a(input), 46);
     }
 }
