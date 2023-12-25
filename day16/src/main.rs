@@ -60,9 +60,9 @@ impl State {
     }
 
     fn reflect<'a>(&'a mut self, map: &Vec<Vec<Mirror>>) {
-        while let Some(val) = self.check_valid_indices(map) {
+        while let Some(pos) = self.get_valid_pos(map) {
             self.beams[self.pos.0 as usize][self.pos.1 as usize].push(self.beam.clone());
-            match val {
+            match pos {
                 Mirror::Empty => (),
                 Mirror::Straight(dim) => {
                     if self.beam.0 != *dim {
@@ -84,17 +84,24 @@ impl State {
             self.move_space();
         }
     }
-    fn check_valid_indices<'a>(&self, map: &'a Vec<Vec<Mirror>>) -> Option<&'a Mirror> {
-        if self.pos.0 < 0 || self.pos.1 < 0 {
+    fn get_valid_pos<'a>(&self, map: &'a Vec<Vec<Mirror>>) -> Option<&'a Mirror> {
+        // index out of bounds
+        if self.pos.0 < 0
+            || self.pos.1 < 0
+            || self.pos.0 >= map.len() as i32
+            || self.pos.1 >= map[self.pos.0 as usize].len() as i32
+        {
             return None;
         }
-        map.get(self.pos.0 as usize)
-            .and_then(|row| row.get(self.pos.1 as usize))
-            .filter(|_| {
-                self.beams[self.pos.0 as usize][self.pos.1 as usize]
-                    .iter()
-                    .all(|beam| *beam != self.beam)
-            })
+        // same beam already passed through
+        if self.beams[self.pos.0 as usize][self.pos.1 as usize]
+            .iter()
+            .all(|beam| *beam != self.beam)
+        {
+            Some(&map[self.pos.0 as usize][self.pos.1 as usize])
+        } else {
+            None
+        }
     }
 
     fn num_energized(&self) -> i32 {
@@ -140,13 +147,11 @@ fn day16b(input: &str) -> i32 {
         let mut state = State::new(beam, (i as i32, 0), beams.clone());
         state.reflect(&map);
         result = state.num_energized().max(result);
-        println!("{:?}, {}", (i as i32, 0), result);
 
         let beam = Beam(Dim::X, Direction::Backward);
-        let mut state = State::new(beam, (i as i32, map[i].len() as i32), beams.clone());
+        let mut state = State::new(beam, (i as i32, map[i].len() as i32 - 1), beams.clone());
         state.reflect(&map);
         result = state.num_energized().max(result);
-        println!("{:?}, {}", (i as i32, map[i].len() as i32), result);
     }
 
     for j in 0..map[0].len() {
@@ -154,13 +159,11 @@ fn day16b(input: &str) -> i32 {
         let mut state = State::new(beam, (0, j as i32), beams.clone());
         state.reflect(&map);
         result = state.num_energized().max(result);
-        println!("{:?}, {}", (0, j as i32), result);
 
         let beam = Beam(Dim::Y, Direction::Backward);
-        let mut state = State::new(beam, (map.len() as i32, j as i32), beams.clone());
+        let mut state = State::new(beam, (map.len() as i32 - 1, j as i32), beams.clone());
         state.reflect(&map);
         result = state.num_energized().max(result);
-        println!("{:?}, {}", (map.len() as i32, j as i32), result);
     }
 
     result
