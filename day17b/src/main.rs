@@ -110,7 +110,6 @@ fn find_adjacent_nodes(
 #[derive(Eq, Debug, Copy, Clone, PartialEq)]
 struct State {
     cost: u32,
-    parent: Option<(usize, usize, usize, usize)>,
     position: (usize, usize, usize, usize),
 }
 
@@ -140,18 +139,15 @@ fn shortest_path(
     dist[start.0][start.1][start.2][start.3] = 0;
     heap.push(State {
         cost: 0,
-        parent: None,
         position: start,
     });
 
     // Examine the frontier with lower cost nodes first (min-heap)
     while let Some(State {
         cost,
-        parent,
         position,
     }) = heap.pop()
     {
-        println!("{} {:?} {:?}", cost, position, parent);
         if goals.contains(&position) {
             return Some(cost);
         }
@@ -166,7 +162,6 @@ fn shortest_path(
         for node_pos in &adj_list[position.0][position.1][position.2][position.3] {
             let next = State {
                 cost: node_pos.4 + cost,
-                parent: Some((position.0, position.1, position.2, position.3)),
                 position: (node_pos.0, node_pos.1, node_pos.2, node_pos.3),
             };
 
