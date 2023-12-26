@@ -19,15 +19,18 @@ impl PartialOrd for State {
         Some(self.cmp(other))
     }
 }
+
 fn shortest_path(
     adj_list: &Vec<Vec<Vec<Vec<Vec<(usize, usize, usize, usize, u32)>>>>>,
     start: (usize, usize, usize, usize),
     goals: Vec<(usize, usize, usize, usize)>,
-    max_same_dir: usize,
 ) -> Option<u32> {
     // dist[node] = current shortest distance from `start` to `node`
     let mut dist: Vec<Vec<Vec<Vec<u32>>>> =
-        vec![vec![vec![vec![u32::MAX; max_same_dir + 1]; 4]; adj_list[0].len()]; adj_list.len()];
+        vec![
+            vec![vec![vec![u32::MAX; adj_list[0][0][0].len()]; 4]; adj_list[0].len()];
+            adj_list.len()
+        ];
     let mut heap = BinaryHeap::new();
 
     // We're at `start`, with a zero cost
@@ -222,7 +225,7 @@ fn day17(input: &str, min_same_dir: usize, max_same_dir: usize) -> Option<u32> {
             end_nodes.push((map.len() - 1, map[0].len() - 1, direction as usize, l));
         }
     }
-    shortest_path(&adj_mat, start_node, end_nodes, max_same_dir)
+    shortest_path(&adj_mat, start_node, end_nodes)
 }
 
 fn main() {
