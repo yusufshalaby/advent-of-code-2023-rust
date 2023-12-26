@@ -10,7 +10,6 @@ struct State {
 impl Ord for State {
     fn cmp(&self, other: &Self) -> Ordering {
         other.cost.cmp(&self.cost)
-        // .then_with(|| other.position.3.cmp(&self.position.3))
     }
 }
 
@@ -25,7 +24,6 @@ fn shortest_path(
     start: (usize, usize, usize, usize),
     goals: Vec<(usize, usize, usize, usize)>,
 ) -> Option<u32> {
-    // dist[node] = current shortest distance from `start` to `node`
     let mut dist: Vec<Vec<Vec<Vec<u32>>>> =
         vec![
             vec![vec![vec![u32::MAX; adj_list[0][0][0].len()]; 4]; adj_list[0].len()];
@@ -33,50 +31,39 @@ fn shortest_path(
         ];
     let mut heap = BinaryHeap::new();
 
-    // We're at `start`, with a zero cost
     dist[start.0][start.1][start.2][start.3] = 0;
     heap.push(State {
         cost: 0,
         position: start,
     });
 
-    // Examine the frontier with lower cost nodes first (min-heap)
     while let Some(State { cost, position }) = heap.pop() {
         if goals.contains(&position) {
             return Some(cost);
         }
 
-        // Important as we may have already found a better way
         if cost > dist[position.0][position.1][position.2][position.3] {
             continue;
         }
 
-        // For each node we can reach, see if we can find a way with
-        // a lower cost going through this node
         for node_pos in &adj_list[position.0][position.1][position.2][position.3] {
             let next = State {
                 cost: node_pos.4 + cost,
                 position: (node_pos.0, node_pos.1, node_pos.2, node_pos.3),
             };
 
-            // If so, add it to the frontier and continue
-            // println!("{:?}", next);
             if next.cost < dist[next.position.0][next.position.1][next.position.2][next.position.3]
             {
                 heap.push(next);
-                // Relaxation, we have now found a better way
                 dist[next.position.0][next.position.1][next.position.2][next.position.3] =
                     next.cost;
             }
         }
     }
-
-    // Goal not reachable
     None
 }
 
 #[derive(PartialEq, Clone, Copy)]
-#[allow(dead_code)]
 enum Direction {
     Up,
     Down,
@@ -187,18 +174,15 @@ fn adjacency_matrix(
     min_same_dir: usize,
     max_same_dir: usize,
 ) -> Vec<Vec<Vec<Vec<Vec<(usize, usize, usize, usize, u32)>>>>> {
-    let mut adj_mat: Vec<Vec<Vec<Vec<Vec<(usize, usize, usize, usize, u32)>>>>> =
-        vec![vec![vec![vec![vec![]; max_same_dir + 1]; 4]; map[0].len()]; map.len()];
+    let mut adj_mat = vec![vec![vec![vec![vec![]; max_same_dir + 1]; 4]; map[0].len()]; map.len()];
     for i in 0..map.len() {
         for j in 0..map[i].len() {
-            // directions (up, down, left, right)
             for direction in [
                 Direction::Up,
                 Direction::Down,
                 Direction::Left,
                 Direction::Right,
             ] {
-                // blocks moved (0, 1, 2, 3)
                 for l in 0..=max_same_dir {
                     adj_mat[i][j][direction as usize][l] =
                         find_adjacent_nodes(i, j, direction, l, &map, min_same_dir, max_same_dir);
