@@ -59,7 +59,7 @@ impl State {
         }
     }
 
-    fn reflect<'a>(&'a mut self, map: &Vec<Vec<Mirror>>) {
+    fn reflect(&mut self, map: &Vec<Vec<Mirror>>) {
         while let Some(pos) = self.get_valid_pos(map) {
             self.beams[self.pos.0 as usize][self.pos.1 as usize].push(self.beam.clone());
             match pos {
@@ -67,7 +67,7 @@ impl State {
                 Mirror::Straight(dim) => {
                     if self.beam.0 != *dim {
                         self.beam = Beam(*dim, Direction::Forward);
-                        let (i, j) = self.pos.clone();
+                        let (i, j) = self.pos;
                         self.reflect(map);
                         self.pos = (i, j);
                         self.beam = Beam(*dim, Direction::Backward);
@@ -106,7 +106,7 @@ impl State {
 
     fn num_energized(&self) -> i32 {
         self.beams.iter().fold(0, |acc, vec| {
-            acc + vec.iter().filter(|&x| x.len() > 0).count() as i32
+            acc + vec.iter().filter(|&x| !x.is_empty()).count() as i32
         })
     }
 }
