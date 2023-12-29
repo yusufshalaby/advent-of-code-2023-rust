@@ -75,13 +75,13 @@ fn parse_input_b(input: &str) -> Vec<(Direction, i64)> {
         .lines()
         .map(|line| {
             let split_line: Vec<&str> = line.splitn(3, ' ').collect();
-            let hex = split_line[2][1..split_line[2].len() - 1].to_string();
+            let hex = &split_line[2][1..split_line[2].len() - 1];
             (
-                match hex.chars().last().unwrap() {
-                    '0' => Direction::Right,
-                    '1' => Direction::Down,
-                    '2' => Direction::Left,
-                    '3' => Direction::Up,
+                match hex.chars().last(){
+                    Some('0') => Direction::Right,
+                    Some('1') => Direction::Down,
+                    Some('2') => Direction::Left,
+                    Some('3') => Direction::Up,
                     _ => panic!("Invalid direction"),
                 },
                 i64::from_str_radix(&hex[1..hex.len() - 1], 16).unwrap(),
