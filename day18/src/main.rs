@@ -77,21 +77,23 @@ fn parse_input_a(input: &str) -> Vec<(Direction, i64)> {
 }
 
 fn parse_input_b(input: &str) -> Vec<(Direction, i64)> {
-    input.lines().map(|line| {
-        let split_line: Vec<&str> = line.splitn(3, ' ').collect();
-        let hex = split_line[2][1..split_line[2].len() - 1].to_string();
-        (
-            match hex.chars().last().unwrap() {
-                '0' => Direction::Right,
-                '1' => Direction::Down,
-                '2' => Direction::Left,
-                '3' => Direction::Up,
-                _ => panic!("Invalid direction"),
-            },
-            i64::from_str_radix(&hex[1..hex.len()-1], 16).unwrap(),
-        )
-    }).collect::<Vec<(Direction, i64)>>()
-
+    input
+        .lines()
+        .map(|line| {
+            let split_line: Vec<&str> = line.splitn(3, ' ').collect();
+            let hex = split_line[2][1..split_line[2].len() - 1].to_string();
+            (
+                match hex.chars().last().unwrap() {
+                    '0' => Direction::Right,
+                    '1' => Direction::Down,
+                    '2' => Direction::Left,
+                    '3' => Direction::Up,
+                    _ => panic!("Invalid direction"),
+                },
+                i64::from_str_radix(&hex[1..hex.len() - 1], 16).unwrap(),
+            )
+        })
+        .collect::<Vec<(Direction, i64)>>()
 }
 
 fn day18a(input: &str) -> i64 {
@@ -103,7 +105,7 @@ fn day18a(input: &str) -> i64 {
 fn day18b(input: &str) -> i64 {
     let parsed_input = parse_input_b(input);
     let coords = get_coords(&parsed_input);
-    polynomial_area(&coords) as i64 + polynomial_perimeter(&coords) as i64 / 2 + 1
+    polynomial_area(&coords) + polynomial_perimeter(&coords) / 2 + 1
 }
 
 fn main() {
