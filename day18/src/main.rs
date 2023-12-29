@@ -8,18 +8,6 @@ enum Direction {
     Right,
 }
 
-impl Direction {
-    fn new(s: &str) -> Direction {
-        match s {
-            "U" => Direction::Up,
-            "D" => Direction::Down,
-            "L" => Direction::Left,
-            "R" => Direction::Right,
-            _ => panic!("Invalid direction"),
-        }
-    }
-}
-
 fn get_coords(input: &[(Direction, i64)]) -> Vec<(i64, i64)> {
     let (mut curr_row, mut curr_col) = (0, 0);
     let mut coords: Vec<(i64, i64)> = vec![(curr_row, curr_col)];
@@ -69,7 +57,13 @@ fn parse_input_a(input: &str) -> Vec<(Direction, i64)> {
         .map(|line| {
             let split_line: Vec<&str> = line.splitn(3, ' ').collect();
             (
-                Direction::new(split_line[0]),
+                match split_line.first() {
+                    Some(&"U") => Direction::Up,
+                    Some(&"D") => Direction::Down,
+                    Some(&"L") => Direction::Left,
+                    Some(&"R") => Direction::Right,
+                    _ => panic!("Invalid direction"),
+                },
                 split_line[1].parse::<i64>().unwrap(),
             )
         })
