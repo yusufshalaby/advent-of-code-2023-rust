@@ -1,3 +1,5 @@
+#![warn(clippy::pedantic)]
+
 #[derive(Debug, PartialEq, Copy, Clone)]
 enum Direction {
     Up,
@@ -37,16 +39,16 @@ fn get_coords(input: &[(Direction, i32)]) -> Vec<(i32, i32)> {
     for row in input {
         match row.0 {
             Direction::Up => {
-                curr_row -= row.1 + 1;
+                curr_row -= row.1;
             }
             Direction::Down => {
-                curr_row += row.1 + 1;
+                curr_row += row.1;
             }
             Direction::Left => {
-                curr_col -= row.1 + 1;
+                curr_col -= row.1;
             }
             Direction::Right => {
-                curr_col += row.1 + 1;
+                curr_col += row.1;
             }
         }
         coords.push((curr_row, curr_col));
@@ -61,25 +63,25 @@ fn polynomial_area(coords: &[(i32, i32)]) -> i32 {
     let mut area = 0;
     for i in 0..coords.len() - 1 {
         area += coords[i].0 * coords[i + 1].1 - coords[i + 1].0 * coords[i].1;
-        println!(
-            "{:?} {:?} => {:?} - {:?} = {:?} => {:?}",
-            coords[i],
-            coords[i + 1],
-            coords[i].0 * coords[i + 1].1,
-            coords[i].1 * coords[i + 1].0,
-            coords[i].0 * coords[i + 1].1 - coords[i + 1].0 * coords[i].1,
-            area
-        );
     }
 
     area.abs() / 2
+}
+
+fn polynomial_perimeter(coords: &[(i32, i32)]) -> i32 {
+    let mut perimeter = 0;
+    for i in 0..coords.len() - 1 {
+        perimeter += (coords[i].0 - coords[i + 1].0).abs() + (coords[i].1 - coords[i + 1].1).abs();
+    }
+
+    perimeter
 }
 
 fn day18a(input: &str) -> i32 {
     let parsed_input = parse_input(input);
     let coords = get_coords(&parsed_input);
     println!("{coords:?}");
-    polynomial_area(&coords)
+    polynomial_area(&coords) + polynomial_perimeter(&coords) / 2 + 1
 }
 
 fn day18b(_input: &str) -> i32 {
