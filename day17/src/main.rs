@@ -1,3 +1,5 @@
+#![warn(clippy::pedantic)]
+
 use std::cmp::Ordering;
 use std::collections::BinaryHeap;
 
@@ -19,15 +21,24 @@ impl PartialOrd for State {
     }
 }
 
+struct AdjacencyMatrix {
+    adj_mat: Vec<Vec<States>>,
+}
+
+struct States {
+    states: Vec<Vec<Vec<State>>>,
+}
+
 fn shortest_path(
-    adj_list: &Vec<Vec<Vec<Vec<Vec<(usize, usize, usize, usize, u32)>>>>>,
+    adj_mat: AdjacencyMatrix,
     start: (usize, usize, usize, usize),
-    goals: Vec<(usize, usize, usize, usize)>,
+    goals: &[(usize, usize, usize, usize)],
 ) -> Option<u32> {
+    let adj_mat = adj_mat.adj_mat;
     let mut dist: Vec<Vec<Vec<Vec<u32>>>> =
         vec![
-            vec![vec![vec![u32::MAX; adj_list[0][0][0].len()]; 4]; adj_list[0].len()];
-            adj_list.len()
+            vec![vec![vec![u32::MAX; adj_mat[0][0].states[0].len()]; 4]; adj_mat[0].len()];
+            adj_mat.len()
         ];
     let mut heap = BinaryHeap::new();
 
@@ -46,10 +57,10 @@ fn shortest_path(
             continue;
         }
 
-        for node_pos in &adj_list[position.0][position.1][position.2][position.3] {
+        for node in &adj_mat[position.0][position.1].states[position.2][position.3] {
             let next = State {
-                cost: node_pos.4 + cost,
-                position: (node_pos.0, node_pos.1, node_pos.2, node_pos.3),
+                cost: node.cost + cost,
+                position: node.position,
             };
 
             if next.cost < dist[next.position.0][next.position.1][next.position.2][next.position.3]
@@ -105,24 +116,24 @@ fn eligible_directions(
 fn move_in_direction(
     row_index: usize,
     col_index: usize,
-    direction: &Direction,
+    direction: Direction,
     blocks: usize,
     map: &Vec<Vec<u32>>,
 ) -> Option<(usize, usize, u32)> {
     match direction {
         Direction::Up if row_index >= blocks => {
-            return Some((row_index - 1, col_index, map[row_index - 1][col_index]));
+            Some((row_index - 1, col_index, map[row_index - 1][col_index]))
         }
         Direction::Down if row_index + blocks < map.len() => {
-            return Some((row_index + 1, col_index, map[row_index + 1][col_index]));
+            Some((row_index + 1, col_index, map[row_index + 1][col_index]))
         }
         Direction::Left if col_index >= blocks => {
-            return Some((row_index, col_index - 1, map[row_index][col_index - 1]));
+            Some((row_index, col_index - 1, map[row_index][col_index - 1]))
         }
         Direction::Right if col_index + blocks < map[row_index].len() => {
-            return Some((row_index, col_index + 1, map[row_index][col_index + 1]));
+            Some((row_index, col_index + 1, map[row_index][col_index + 1]))
         }
-        _ => return None,
+        _ => None,
     }
 }
 
@@ -134,25 +145,27 @@ fn find_adjacent_nodes(
     map: &Vec<Vec<u32>>,
     min_same_dir: usize,
     max_same_dir: usize,
-) -> Vec<(usize, usize, usize, usize, u32)> {
+) -> Vec<State> {
     let mut adjacent_nodes = Vec::new();
     let eligible_directions =
         eligible_directions(prev_direction, blocks_moved, min_same_dir, max_same_dir);
     for direction in eligible_directions {
         if let Some((new_row_index, new_col_index, value)) =
-            move_in_direction(row_index, col_index, &direction, 1, map)
+            move_in_direction(row_index, col_index, direction, 1, map)
         {
             let mut new_blocks_moved = 1;
             if direction == prev_direction {
                 new_blocks_moved += blocks_moved;
             }
-            adjacent_nodes.push((
-                new_row_index,
-                new_col_index,
-                direction as usize,
-                new_blocks_moved,
-                value,
-            ))
+            adjacent_nodes.push(State {
+                position: (
+                    new_row_index,
+                    new_col_index,
+                    direction as usize,
+                    new_blocks_moved,
+                ),
+                cost: value,
+            });
         }
     }
     adjacent_nodes
@@ -173,10 +186,12 @@ fn adjacency_matrix(
     map: &Vec<Vec<u32>>,
     min_same_dir: usize,
     max_same_dir: usize,
-) -> Vec<Vec<Vec<Vec<Vec<(usize, usize, usize, usize, u32)>>>>> {
-    let mut adj_mat = vec![vec![vec![vec![vec![]; max_same_dir + 1]; 4]; map[0].len()]; map.len()];
+) -> AdjacencyMatrix {
+    let mut adj_mat = Vec::new();
     for i in 0..map.len() {
+        adj_mat.push(Vec::new());
         for j in 0..map[i].len() {
+            let mut states = vec![vec![vec![]; max_same_dir + 1]; 4];
             for direction in [
                 Direction::Up,
                 Direction::Down,
@@ -184,13 +199,14 @@ fn adjacency_matrix(
                 Direction::Right,
             ] {
                 for l in 0..=max_same_dir {
-                    adj_mat[i][j][direction as usize][l] =
-                        find_adjacent_nodes(i, j, direction, l, &map, min_same_dir, max_same_dir);
+                    states[direction as usize][l] =
+                        find_adjacent_nodes(i, j, direction, l, map, min_same_dir, max_same_dir);
                 }
             }
+            adj_mat[i].push(States { states });
         }
     }
-    adj_mat
+    AdjacencyMatrix { adj_mat }
 }
 
 fn day17(input: &str, min_same_dir: usize, max_same_dir: usize) -> Option<u32> {
@@ -209,7 +225,7 @@ fn day17(input: &str, min_same_dir: usize, max_same_dir: usize) -> Option<u32> {
             end_nodes.push((map.len() - 1, map[0].len() - 1, direction as usize, l));
         }
     }
-    shortest_path(&adj_mat, start_node, end_nodes)
+    shortest_path(adj_mat, start_node, &end_nodes)
 }
 
 fn main() {
