@@ -138,7 +138,7 @@ fn day19a(input: &str) -> i32 {
     let source: &str = "in";
     for part in parts {
         let destination = find_destination(&workflows, &part, source);
-        println!("{part:?} {source} -> {destination}");
+        // println!("{part:?} {source} -> {destination}");
         if destination == "A" {
             result += part.x + part.m + part.a + part.s;
         }
@@ -146,7 +146,7 @@ fn day19a(input: &str) -> i32 {
     result
 }
 
-fn day19b(_input: &str) -> i32 {
+fn day19b(_input: &str) -> i64 {
     0
 }
 
@@ -189,6 +189,6 @@ hdj{m>838:A,pv}
     #[test]
     fn test_xb() {
         let input = input();
-        assert_eq!(day19b(input), 0);
+        assert_eq!(day19b(input), 167_409_079_868_000);
     }
 }

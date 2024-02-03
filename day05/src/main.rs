@@ -16,7 +16,7 @@ fn parse_seeds(seeds_raw: &str) -> Vec<i64> {
         .unwrap()
         .1
         .trim()
-        .split(" ")
+        .split(' ')
         .map(|x| x.parse::<i64>().unwrap())
         .collect::<Vec<_>>()
 }
@@ -24,11 +24,11 @@ fn parse_seeds(seeds_raw: &str) -> Vec<i64> {
 fn parse_maps(maps_raw: &str) -> Vec<XtoYMaps> {
     let mut x_to_y_maps: Vec<XtoYMaps> = Vec::new();
     for map in maps_raw.split("\n\n") {
-        let map_content = map.split_once("\n").unwrap().1;
+        let map_content = map.split_once('\n').unwrap().1;
         let mut maps = Vec::new();
         for line in map_content.lines() {
             let split_line = line
-                .splitn(3, " ")
+                .splitn(3, ' ')
                 .map(|x| x.parse::<i64>().unwrap())
                 .collect::<Vec<_>>();
             maps.push(Map {
@@ -39,14 +39,14 @@ fn parse_maps(maps_raw: &str) -> Vec<XtoYMaps> {
         }
         x_to_y_maps.push(XtoYMaps(maps))
     }
-    return x_to_y_maps;
+    x_to_y_maps
 }
 
 fn parse_input(input: &str) -> (Vec<i64>, Vec<XtoYMaps>) {
     let (seeds_raw, maps_raw) = input.split_once("\n\n").unwrap();
     let seeds = parse_seeds(seeds_raw);
     let x_to_y_maps = parse_maps(maps_raw);
-    return (seeds, x_to_y_maps);
+    (seeds, x_to_y_maps)
 }
 
 fn day5a(input: &str) -> i64 {
@@ -54,7 +54,7 @@ fn day5a(input: &str) -> i64 {
     return seeds
         .iter()
         .map(|seed_number| {
-            let mut number = seed_number.clone();
+            let mut number = *seed_number;
             for maps in x_to_y_maps.iter() {
                 for map in &maps.0 {
                     if number >= map.src_start && number < map.src_start + map.length {
@@ -63,7 +63,7 @@ fn day5a(input: &str) -> i64 {
                     }
                 }
             }
-            return number;
+            number
         })
         .min()
         .unwrap();
@@ -103,7 +103,7 @@ fn day5b(input: &str) -> i64 {
             local_result
         }));
     }
-    return handles
+    handles
         .into_iter()
         .map(|handle| handle.join().unwrap())
         .min()
