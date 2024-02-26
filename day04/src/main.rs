@@ -8,12 +8,12 @@ fn day4a(input: &str) -> i32 {
                 line.split_once(": ").unwrap().1.split_once(" | ").unwrap();
             let count = winning_numbers
                 .trim()
-                .split(" ")
+                .split(' ')
                 .filter(|&n| {
-                    &n != &""
+                    !n.is_empty()
                         && my_numbers
                             .trim()
-                            .split(" ")
+                            .split(' ')
                             .collect::<Vec<_>>()
                             .contains(&n)
                 })
@@ -21,7 +21,7 @@ fn day4a(input: &str) -> i32 {
             if count == 0 {
                 return 0;
             }
-            return 2i32.pow((count - 1) as u32)
+            2i32.pow((count - 1) as u32)
         })
         .sum()
 }
@@ -33,21 +33,21 @@ fn day4b(input: &str) -> i32 {
             line.split_once(": ").unwrap().1.split_once(" | ").unwrap();
         let count = winning_numbers
             .trim()
-            .split(" ")
+            .split(' ')
             .filter(|&n| {
-                &n != &""
+                !n.is_empty()
                     && my_numbers
                         .trim()
-                        .split(" ")
+                        .split(' ')
                         .collect::<Vec<_>>()
                         .contains(&n)
             })
             .count();
-        let multiplier = num_cards.entry(i).or_insert(1).clone();
+        let multiplier = *num_cards.entry(i).or_insert(1);
         for j in i+1..i+1+count{
             *num_cards.entry(j).or_insert(1) += multiplier;
         }
-        return multiplier as i32;
+        multiplier as i32
     }).sum()
 }
 
