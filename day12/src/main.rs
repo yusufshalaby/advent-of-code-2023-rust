@@ -12,7 +12,7 @@ impl Puzzle {
         Self {
             pattern: pattern.chars().collect(),
             groupsizes: groupsizes
-                .split(",")
+                .split(',')
                 .map(|x| x.parse::<usize>().unwrap())
                 .collect(),
         }
@@ -26,7 +26,7 @@ impl Puzzle {
             .join("?");
         let groupsizes = std::iter::repeat(
             groupsizes
-                .split(",")
+                .split(',')
                 .map(|x| x.parse::<usize>().unwrap())
                 .collect::<Vec<_>>(),
         )
